@@ -1,110 +1,144 @@
-import React, { useState, useEffect, useRef } from 'react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura VTT - AI Dungeon Master</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel Standalone CDN to compile JSX in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    /* Custom scrollbar styling for immersive dark mode look */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #020617;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-200 antialiased overflow-hidden selection:bg-emerald-500 selection:text-white">
+  <div id="root"></div>
 
-// Global Firebase setup variables safely read from environment
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'aura-vtt-dm';
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-const dynamicImport = (url) => {
-  try {
-    return new Function('u', 'return import(u)')(url);
-  } catch (err) {
-    return import(/* webpackIgnore: true */ url);
-  }
-};
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'aura-vtt-dm';
 
-const DEFAULT_KEY = '';
+    const dynamicImport = (url) => {
+      try {
+        return new Function('u', 'return import(u)')(url);
+      } catch (err) {
+        return import(/* webpackIgnore: true */ url);
+      }
+    };
 
-const SAMPLE_DRIZZT_JSON = {
-  "name": "Drizzt O'Durrden",
-  "level": 2,
-  "race": {
-    "index": "half-elf",
-    "name": "Half-Elf",
-    "url": "/api/2014/races/half-elf"
-  },
-  "charClass": {
-    "index": "artificer",
-    "name": "Artificer",
-    "url": "/api/classes/artificer"
-  },
-  "subclass": {
-    "index": "battle-smith",
-    "name": "Battle Smith"
-  },
-  "background": {
-    "name": "Noble",
-    "skills": "History, Persuasion",
-    "feature": "Position of Privilege",
-    "trait": "",
-    "ideal": "",
-    "bond": "",
-    "flaw": "",
-    "desc": "You understand wealth, power, and privilege. You carry a noble title."
-  },
-  "baseStats": { "STR": 13, "DEX": 14, "CON": 12, "INT": 12, "WIS": 13, "CHA": 10 },
-  "racialBonuses": { "STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 2 },
-  "asiBonuses": { "STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 0 },
-  "armorClass": 12,
-  "maxHp": 18,
-  "spells": [
-    {
-      "index": "alter-self",
-      "name": "Alter Self",
-      "desc": [
-        "You assume a different form. Choose Aquatic Adaptation, Change Appearance, or Natural Weapons."
-      ],
-      "range": "Self",
-      "components": ["V", "S"],
-      "ritual": false,
-      "duration": "Up to 1 hour",
-      "concentration": true,
-      "casting_time": "1 action",
+    const DEFAULT_KEY = '';
+
+    const SAMPLE_DRIZZT_JSON = {
+      "name": "Drizzt O'Durrden",
       "level": 2,
-      "school": { "name": "Transmutation" }
-    }
-  ],
-  "features": [
-    {
-      "name": "Magical Tinkering",
-      "desc": ["At 1st level, you learn how to invest a spark of magic into mundane objects, creating minor magical effects."]
-    },
-    {
-      "name": "Spellcasting",
-      "desc": ["You have studied the inner workings of magic and can cast artificer spells using artisan tools as spellcasting foci."]
-    }
-  ],
-  "equipment": {
-    "armorType": "none",
-    "shield": false
-  },
-  "inventory": [
-    { "name": "Explorer's Pack", "qty": 1, "desc": "Backpack, bedroll, mess kit, rations, waterskin." },
-    { "name": "Dagger", "qty": 1, "desc": "1d4 piercing, finesse, light." }
-  ],
-  "gold": { "gp": 15, "sp": 5, "cp": 0 }
-};
+      "race": {
+        "index": "half-elf",
+        "name": "Half-Elf",
+        "url": "/api/2014/races/half-elf"
+      },
+      "charClass": {
+        "index": "artificer",
+        "name": "Artificer",
+        "url": "/api/classes/artificer"
+      },
+      "subclass": {
+        "index": "battle-smith",
+        "name": "Battle Smith"
+      },
+      "background": {
+        "name": "Noble",
+        "skills": "History, Persuasion",
+        "feature": "Position of Privilege",
+        "trait": "",
+        "ideal": "",
+        "bond": "",
+        "flaw": "",
+        "desc": "You understand wealth, power, and privilege. You carry a noble title."
+      },
+      "baseStats": { "STR": 13, "DEX": 14, "CON": 12, "INT": 12, "WIS": 13, "CHA": 10 },
+      "racialBonuses": { "STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 2 },
+      "asiBonuses": { "STR": 0, "DEX": 0, "CON": 0, "INT": 0, "WIS": 0, "CHA": 0 },
+      "armorClass": 12,
+      "maxHp": 18,
+      "spells": [
+        {
+          "index": "alter-self",
+          "name": "Alter Self",
+          "desc": [
+            "You assume a different form. Choose Aquatic Adaptation, Change Appearance, or Natural Weapons."
+          ],
+          "range": "Self",
+          "components": ["V", "S"],
+          "ritual": false,
+          "duration": "Up to 1 hour",
+          "concentration": true,
+          "casting_time": "1 action",
+          "level": 2,
+          "school": { "name": "Transmutation" }
+        }
+      ],
+      "features": [
+        {
+          "name": "Magical Tinkering",
+          "desc": ["At 1st level, you learn how to invest a spark of magic into mundane objects, creating minor magical effects."]
+        },
+        {
+          "name": "Spellcasting",
+          "desc": ["You have studied the inner workings of magic and can cast artificer spells using artisan tools as spellcasting foci."]
+        }
+      ],
+      "equipment": {
+        "armorType": "none",
+        "shield": false
+      },
+      "inventory": [
+        { "name": "Explorer's Pack", "qty": 1, "desc": "Backpack, bedroll, mess kit, rations, waterskin." },
+        { "name": "Dagger", "qty": 1, "desc": "1d4 piercing, finesse, light." }
+      ],
+      "gold": { "gp": 15, "sp": 5, "cp": 0 }
+    };
 
-const getModifier = (score) => Math.floor((score - 10) / 2);
-const formatModifier = (mod) => (mod >= 0 ? `+${mod}` : `${mod}`);
+    const getModifier = (score) => Math.floor((score - 10) / 2);
+    const formatModifier = (mod) => (mod >= 0 ? `+${mod}` : `${mod}`);
 
-const formatText = (text) => {
-  if (!text) return null;
-  return text.split('\n').map((line, i) => {
-    if (!line.trim()) return <div key={i} className="h-2" />;
-    const parts = line.split(/(\*\*.*?\*\*)/g);
-    return (
-      <p key={i} className="mb-1 last:mb-0">
-        {parts.map((part, j) => {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={j} className="text-emerald-400 font-semibold">{part.slice(2, -2)}</strong>;
-          }
-          return part;
-        })}
-      </p>
-    );
-  });
-};
+    const formatText = (text) => {
+      if (!text) return null;
+      return text.split('\n').map((line, i) => {
+        if (!line.trim()) return <div key={i} className="h-2" />;
+        const parts = line.split(/(\*\*.*?\*\*)/g);
+        return (
+          <p key={i} className="mb-1 last:mb-0">
+            {parts.map((part, j) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={j} className="text-emerald-400 font-semibold">{part.slice(2, -2)}</strong>;
+              }
+              return part;
+            })}
+          </p>
+        );
+      });
+    };
 
-const getSystemInstruction = (char) => `You are an expert, creative, and fair Dungeon Master running a D&D 5e adventure. 
+    const getSystemInstruction = (char) => `You are an expert, creative, and fair Dungeon Master running a D&D 5e adventure. 
 Your tone is descriptive, atmospheric, and highly engaging. 
 The player is running a single character imported from a full character sheet.
 Character Name: ${char.name}
@@ -129,1241 +163,1245 @@ Guidelines:
 5. **CHARACTER SHEET UPDATES**: You have the power to modify the player's character sheet when things happen in the game (taking damage, healing, finding items, losing items, etc.). Whenever you want to change HP or inventory, append a JSON block to the very end of your response in this exact format:
 [SHEET_UPDATE: {"hpChange": -3, "addInventory": [{"name": "Ancient Coin", "qty": 1, "desc": "Old coin"}], "removeInventory": ["Dagger"]}]`;
 
-const FileJsonIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"/><path d="M14 12a1 1 0 0 1 1 1v1a1 1 0 0 0 1 1 1 1 0 0 0-1 1v1a1 1 0 0 1-1 1"/></svg>;
-const UploadCloudIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>;
-const SendIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
-const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
-const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
-const BotIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>;
-const HeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
-const ShieldIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-const KeyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
-const SaveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
-const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
-const FolderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>;
-const CpuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>;
-
-export default function App() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || DEFAULT_KEY);
-  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('gemini_model') || 'gemini-3.8-flash');
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [tempKey, setTempKey] = useState(apiKey);
-  const [tempModel, setTempModel] = useState(selectedModel);
-
-  const [user, setUser] = useState(null);
-  const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [saveNameInput, setSaveNameInput] = useState('');
-  const [savedSlots, setSavedSlots] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingSaves, setIsLoadingSaves] = useState(false);
-
-  const [gameState, setGameState] = useState('import'); // 'import' | 'playing'
-  const [activeSidebarTab, setActiveSidebarTab] = useState('stats'); // 'stats' | 'spells' | 'features' | 'inventory' | 'background'
-
-  const [importedCharacter, setImportedCharacter] = useState(null);
-  const [jsonInput, setJsonInput] = useState('');
-  const [importError, setImportError] = useState(null);
-
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [notification, setNotification] = useState(null);
-
-  const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const fbRef = useRef({ auth: null, db: null, authMod: null, firestoreMod: null });
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function initFirebase() {
-      loadLocalSaves();
-
-      if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-        return;
-      }
-
-      try {
-        const config = JSON.parse(__firebase_config);
-        
-        const appMod = await dynamicImport('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
-        const authMod = await dynamicImport('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
-        const firestoreMod = await dynamicImport('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
-
-        if (!isMounted) return;
-
-        const app = appMod.initializeApp(config);
-        const auth = authMod.getAuth(app);
-        const db = firestoreMod.getFirestore(app);
-
-        fbRef.current = { auth, db, authMod, firestoreMod };
-
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await authMod.signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await authMod.signInAnonymously(auth);
-        }
-
-        authMod.onAuthStateChanged(auth, (currentUser) => {
-          if (isMounted) {
-            setUser(currentUser);
-            loadCloudAndLocalSaves(db, auth, currentUser, firestoreMod);
-          }
-        });
-      } catch (err) {
-        console.warn("Firebase initialized in local-fallback mode:", err.message);
-      }
-    }
-
-    initFirebase();
-    return () => { isMounted = false; };
-  }, []);
-
-  const getLocalSaves = () => {
-    try {
-      return JSON.parse(localStorage.getItem('aura_vtt_local_saves') || '[]');
-    } catch (e) {
-      return [];
-    }
-  };
-
-  const loadLocalSaves = () => {
-    const local = getLocalSaves();
-    setSavedSlots(local);
-  };
-
-  const loadCloudAndLocalSaves = async (db, auth, currentUser, firestoreMod) => {
-    setIsLoadingSaves(true);
-    const localSaves = getLocalSaves();
-    let cloudSaves = [];
-
-    if (db && auth && currentUser && firestoreMod) {
-      try {
-        const userId = currentUser.uid;
-        const savesRef = firestoreMod.collection(db, 'artifacts', appId, 'users', userId, 'adventure_saves');
-        const querySnapshot = await firestoreMod.getDocs(savesRef);
-        querySnapshot.forEach((docSnap) => {
-          cloudSaves.push({ id: docSnap.id, isCloud: true, ...docSnap.data() });
-        });
-      } catch (err) {
-        console.error("Error fetching cloud saves:", err);
-      }
-    }
-
-    const combined = [...cloudSaves, ...localSaves.map(s => ({ ...s, isCloud: false }))];
-    combined.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-    setSavedSlots(combined);
-    setIsLoadingSaves(false);
-  };
-
-  const handleCloudSave = async () => {
-    if (!importedCharacter) return;
-    const nameToUse = saveNameInput.trim() || `${importedCharacter.name} - Level ${importedCharacter.level} (${new Date().toLocaleDateString()})`;
-
-    setIsSaving(true);
-    const saveId = `save_${Date.now()}`;
-    const saveData = {
-      id: saveId,
-      saveName: nameToUse,
-      updatedAt: new Date().toISOString(),
-      character: importedCharacter,
-      messages: messages,
-    };
-
-    const existingLocal = getLocalSaves();
-    const updatedLocal = [saveData, ...existingLocal.filter(s => s.id !== saveId)];
-    localStorage.setItem('aura_vtt_local_saves', JSON.stringify(updatedLocal));
-
-    const { db, auth, firestoreMod } = fbRef.current;
-    if (db && auth && auth.currentUser && firestoreMod) {
-      try {
-        const userId = auth.currentUser.uid;
-        const saveDocRef = firestoreMod.doc(db, 'artifacts', appId, 'users', userId, 'adventure_saves', saveId);
-        await firestoreMod.setDoc(saveDocRef, saveData);
-        showNotificationBanner(`💾 Cloud & Local save successful: "${nameToUse}"!`);
-      } catch (err) {
-        showNotificationBanner(`💾 Local save stored (Cloud error: ${err.message})`);
-      }
-    } else {
-      showNotificationBanner(`💾 Adventure saved locally: "${nameToUse}"!`);
-    }
-
-    setSaveNameInput('');
-    setIsSaving(false);
-    loadCloudAndLocalSaves(db, auth, user, firestoreMod);
-  };
-
-  const loadSaveSlot = (save) => {
-    if (!save || !save.character) return;
-    setImportedCharacter(save.character);
-    setMessages(save.messages || []);
-    setGameState('playing');
-    setSaveModalOpen(false);
-    showNotificationBanner(`📖 Loaded adventure: "${save.saveName}"`);
-  };
-
-  const deleteSaveSlot = async (saveId, isCloud) => {
-    const existingLocal = getLocalSaves();
-    const filteredLocal = existingLocal.filter(s => s.id !== saveId);
-    localStorage.setItem('aura_vtt_local_saves', JSON.stringify(filteredLocal));
-
-    const { db, auth, firestoreMod } = fbRef.current;
-    if (isCloud && db && auth && auth.currentUser && firestoreMod) {
-      try {
-        const userId = auth.currentUser.uid;
-        const saveDocRef = firestoreMod.doc(db, 'artifacts', appId, 'users', userId, 'adventure_saves', saveId);
-        await firestoreMod.deleteDoc(saveDocRef);
-      } catch (err) {
-        console.error("Cloud delete error:", err);
-      }
-    }
-
-    showNotificationBanner("🗑 Save slot deleted");
-    loadCloudAndLocalSaves(db, auth, user, firestoreMod);
-  };
-
-  const downloadSaveFile = (customTitle) => {
-    const saveData = {
-      version: 1,
-      saveName: customTitle || `${importedCharacter?.name || 'Adventure'} Save`,
-      savedAt: new Date().toISOString(),
-      character: importedCharacter,
-      messages: messages
-    };
-    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${(importedCharacter?.name || 'adventure').toLowerCase().replace(/\s+/g, '_')}_save.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showNotificationBanner("📥 Save file downloaded!");
-  };
-
-  const handleImportSaveFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target.result);
-        if (parsed.character && parsed.messages) {
-          setImportedCharacter(parsed.character);
-          setMessages(parsed.messages);
-          setGameState('playing');
-          setSaveModalOpen(false);
-          showNotificationBanner("📖 Adventure restored from save file!");
-        } else {
-          showNotificationBanner("⚠️ Invalid save file format.");
-        }
-      } catch (err) {
-        showNotificationBanner("⚠️ Failed to parse save file.");
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const saveSettings = () => {
-    const trimmedKey = tempKey.trim();
-    setApiKey(trimmedKey);
-    localStorage.setItem('gemini_api_key', trimmedKey);
-
-    setSelectedModel(tempModel);
-    localStorage.setItem('gemini_model', tempModel);
-
-    setShowKeyModal(false);
-    showNotificationBanner(`⚙ Settings updated! Active Model: ${tempModel}`);
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading]);
-
-  const parseAndSetCharacter = (rawData) => {
-    setImportError(null);
-    try {
-      const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-
-      if (!data.name) {
-        throw new Error("Missing 'name' field in character JSON.");
-      }
-
-      const base = data.baseStats || { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 };
-      const racial = data.racialBonuses || { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 };
-      const asi = data.asiBonuses || { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 };
-
-      const computedStats = {
-        STR: (base.STR || 10) + (racial.STR || 0) + (asi.STR || 0),
-        DEX: (base.DEX || 10) + (racial.DEX || 0) + (asi.DEX || 0),
-        CON: (base.CON || 10) + (racial.CON || 0) + (asi.CON || 0),
-        INT: (base.INT || 10) + (racial.INT || 0) + (asi.INT || 0),
-        WIS: (base.WIS || 10) + (racial.WIS || 0) + (asi.WIS || 0),
-        CHA: (base.CHA || 10) + (racial.CHA || 0) + (asi.CHA || 0),
-      };
-
-      const maxHp = data.maxHp || 10;
-      const parsed = {
-        name: data.name,
-        level: data.level || 1,
-        race: data.race?.name || (typeof data.race === 'string' ? data.race : 'Human'),
-        class: data.charClass?.name || data.class || 'Adventurer',
-        subclass: data.subclass?.name || (typeof data.subclass === 'string' ? data.subclass : ''),
-        background: data.background || { name: 'Custom', desc: '' },
-        hp: maxHp,
-        maxHp: maxHp,
-        armorClass: data.armorClass || (10 + getModifier(computedStats.DEX)),
-        stats: computedStats,
-        baseStats: base,
-        racialBonuses: racial,
-        asiBonuses: asi,
-        spells: data.spells || [],
-        features: data.features || [],
-        equipment: data.equipment || {},
-        inventory: data.inventory || [],
-        gold: data.gold || { gp: 0, sp: 0, cp: 0 }
-      };
-
-      setImportedCharacter(parsed);
-      setJsonInput(JSON.stringify(data, null, 2));
-      showNotificationBanner(`Loaded character: ${parsed.name}!`);
-    } catch (err) {
-      setImportError(`Invalid JSON: ${err.message}`);
-    }
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => parseAndSetCharacter(event.target.result);
-    reader.onerror = () => setImportError("Error reading the selected JSON file.");
-    reader.readAsText(file);
-  };
-
-  const handleDragOver = (e) => e.preventDefault();
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type === "application/json") {
-      const reader = new FileReader();
-      reader.onload = (event) => parseAndSetCharacter(event.target.result);
-      reader.readAsText(file);
-    } else {
-      setImportError("Please drop a valid .json file.");
-    }
-  };
-
-  const loadPresetDrizzt = () => parseAndSetCharacter(SAMPLE_DRIZZT_JSON);
-
-  const showNotificationBanner = (msg) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 4000);
-  };
-
-  const startGame = async () => {
-    if (!importedCharacter) return;
-
-    const keyToUse = (apiKey || '').trim();
-    if (!keyToUse) {
-      setShowKeyModal(true);
-      showNotificationBanner("🔑 Please enter a valid Gemini API key to start.");
-      return;
-    }
-
-    setGameState('playing');
-    const initialHook = `The player character, ${importedCharacter.name}, a Level ${importedCharacter.level} ${importedCharacter.race} ${importedCharacter.class} (${importedCharacter.subclass || 'Standard'}), has just arrived at the starting location of the adventure. Describe where they are in a vivid, atmospheric D&D fantasy setting based on their background (${importedCharacter.background?.name || 'Noble'}) and present an immediate hook or person of interest. End by asking what they do.`;
-
-    await sendMessageToAI([{ role: 'user', text: initialHook, hidden: true }], keyToUse);
-  };
-
-  const rollDice = (sides) => {
-    const roll = Math.floor(Math.random() * sides) + 1;
-    const msgText = `🎲 Rolled a d${sides}: **${roll}**`;
-    handlePlayerMessage(msgText);
-  };
-
-  const handlePlayerMessage = async (text) => {
-    if (!text.trim() || loading) return;
-
-    const newUserMsg = { role: 'user', text, hidden: false };
-    const newMessages = [...messages, newUserMsg];
-    setMessages(newMessages);
-    setInput('');
-
-    await sendMessageToAI(newMessages);
-  };
-
-  const retryLastDMCall = async () => {
-    if (loading) return;
-    const cleaned = messages.filter(m => !m.isError);
-    if (cleaned.length > 0) {
-      await sendMessageToAI(cleaned);
-    } else if (importedCharacter) {
-      const initialHook = `The player character, ${importedCharacter.name}, a Level ${importedCharacter.level} ${importedCharacter.race} ${importedCharacter.class} (${importedCharacter.subclass || 'Standard'}), has just arrived at the starting location of the adventure. Describe where they are in a vivid, atmospheric D&D fantasy setting based on their background (${importedCharacter.background?.name || 'Noble'}) and present an immediate hook or person of interest. End by asking what they do.`;
-      await sendMessageToAI([{ role: 'user', text: initialHook, hidden: true }]);
-    }
-  };
-
-  const sendMessageToAI = async (currentMessages, overrideKey = null) => {
-    const keyToUse = (overrideKey || apiKey || '').trim();
-
-    if (!keyToUse) {
-      setShowKeyModal(true);
-      setMessages(prev => {
-        const filtered = prev.filter(m => !m.isError);
-        return [...filtered, { 
-          role: 'model', 
-          text: '⚠️ **Gemini API Key Required**\n\nPlease set your Gemini API key in **Settings** to connect with the Dungeon Master. You can get a free key from [Google AI Studio](https://aistudio.google.com/app/apikey).', 
-          hidden: false, 
-          isError: true
-        }];
-      });
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-
-    // CRITICAL: Ensure robust candidate models list without unsupported names
-    const candidateModels = [
-      selectedModel,
-      'gemini-3.8-flash',
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-flash'
-    ].filter((m, idx, arr) => arr.indexOf(m) === idx); // unique list
-
-    let lastErrorMsg = null;
-    let authFailed = false;
-    let isNetworkError = false;
-
-    const contents = currentMessages
-      .filter(m => m.role === 'user' || m.role === 'model')
-      .map(m => ({
-        role: m.role,
-        parts: [{ text: m.text }]
-      }));
-
-    const payload = {
-      contents,
-      systemInstruction: { parts: [{ text: getSystemInstruction(importedCharacter) }] }
-    };
-
-    for (const modelName of candidateModels) {
-      try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(keyToUse)}`;
-
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (data.error) {
-          console.warn(`Model ${modelName} returned error:`, data.error.message);
-          lastErrorMsg = data.error.message;
-          const errStr = (data.error.message || '').toLowerCase();
-          if (
-            response.status === 400 || 
-            response.status === 401 || 
-            response.status === 403 || 
-            errStr.includes('api key') || 
-            errStr.includes('authentication') || 
-            errStr.includes('credential') || 
-            errStr.includes('unauthorized') ||
-            errStr.includes('oauth')
-          ) {
-            authFailed = true;
-          }
-          continue;
-        }
-
-        if (data.candidates && data.candidates.length > 0) {
-          const candidate = data.candidates[0];
-          if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-            let rawText = candidate.content.parts[0].text;
-
-            const updateRegex = /\[SHEET_UPDATE:\s*({.*?})\]/s;
-            const match = rawText.match(updateRegex);
-            let cleanText = rawText;
-
-            if (match) {
-              cleanText = rawText.replace(updateRegex, '').trim();
-              try {
-                const updates = JSON.parse(match[1]);
-                applyCharacterUpdates(updates);
-              } catch (err) {
-                console.error("Failed to parse sheet update JSON:", err);
-              }
-            }
-
-            // If the requested model failed and fell back to another, update state to reflect the active model
-            if (modelName !== selectedModel) {
-              setSelectedModel(modelName);
-              localStorage.setItem('gemini_model', modelName);
-              showNotificationBanner(`ℹ️ Switched active model to ${modelName}`);
-            }
-
-            setMessages(prev => [...currentMessages, { role: 'model', text: cleanText, hidden: false }]);
-            setLoading(false);
+    const FileJsonIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"/><path d="M14 12a1 1 0 0 1 1 1v1a1 1 0 0 0 1 1 1 1 0 0 0-1 1v1a1 1 0 0 1-1 1"/></svg>;
+    const UploadCloudIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>;
+    const SendIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+    const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+    const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+    const BotIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>;
+    const HeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
+    const ShieldIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+    const KeyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
+    const SaveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+    const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+    const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+    const FolderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>;
+    const CpuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>;
+
+    function App() {
+      const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || DEFAULT_KEY);
+      const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('gemini_model') || 'gemini-3.8-flash');
+      const [showKeyModal, setShowKeyModal] = useState(false);
+      const [tempKey, setTempKey] = useState(apiKey);
+      const [tempModel, setTempModel] = useState(selectedModel);
+
+      const [user, setUser] = useState(null);
+      const [saveModalOpen, setSaveModalOpen] = useState(false);
+      const [saveNameInput, setSaveNameInput] = useState('');
+      const [savedSlots, setSavedSlots] = useState([]);
+      const [isSaving, setIsSaving] = useState(false);
+      const [isLoadingSaves, setIsLoadingSaves] = useState(false);
+
+      const [gameState, setGameState] = useState('import'); // 'import' | 'playing'
+      const [activeSidebarTab, setActiveSidebarTab] = useState('stats'); // 'stats' | 'spells' | 'features' | 'inventory' | 'background'
+
+      const [importedCharacter, setImportedCharacter] = useState(null);
+      const [jsonInput, setJsonInput] = useState('');
+      const [importError, setImportError] = useState(null);
+
+      const [messages, setMessages] = useState([]);
+      const [input, setInput] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+      const [notification, setNotification] = useState(null);
+
+      const messagesEndRef = useRef(null);
+      const fileInputRef = useRef(null);
+      const fbRef = useRef({ auth: null, db: null, authMod: null, firestoreMod: null });
+
+      useEffect(() => {
+        let isMounted = true;
+
+        async function initFirebase() {
+          loadLocalSaves();
+
+          if (typeof __firebase_config === 'undefined' || !__firebase_config) {
             return;
           }
+
+          try {
+            const config = JSON.parse(__firebase_config);
+            
+            const appMod = await dynamicImport('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
+            const authMod = await dynamicImport('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+            const firestoreMod = await dynamicImport('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+
+            if (!isMounted) return;
+
+            const app = appMod.initializeApp(config);
+            const auth = authMod.getAuth(app);
+            const db = firestoreMod.getFirestore(app);
+
+            fbRef.current = { auth, db, authMod, firestoreMod };
+
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await authMod.signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              await authMod.signInAnonymously(auth);
+            }
+
+            authMod.onAuthStateChanged(auth, (currentUser) => {
+              if (isMounted) {
+                setUser(currentUser);
+                loadCloudAndLocalSaves(db, auth, currentUser, firestoreMod);
+              }
+            });
+          } catch (err) {
+            console.warn("Firebase initialized in local-fallback mode:", err.message);
+          }
         }
-      } catch (error) {
-        console.warn(`Fetch error with model ${modelName}:`, error);
-        lastErrorMsg = error.message;
-        if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
-          isNetworkError = true;
+
+        initFirebase();
+        return () => { isMounted = false; };
+      }, []);
+
+      const getLocalSaves = () => {
+        try {
+          return JSON.parse(localStorage.getItem('aura_vtt_local_saves') || '[]');
+        } catch (e) {
+          return [];
         }
-      }
-    }
+      };
 
-    if (authFailed) {
-      setShowKeyModal(true);
-      showNotificationBanner("🔑 Invalid API key. Please update your key in Settings.");
-    }
+      const loadLocalSaves = () => {
+        const local = getLocalSaves();
+        setSavedSlots(local);
+      };
 
-    console.error("All candidate models failed:", lastErrorMsg);
+      const loadCloudAndLocalSaves = async (db, auth, currentUser, firestoreMod) => {
+        setIsLoadingSaves(true);
+        const localSaves = getLocalSaves();
+        let cloudSaves = [];
 
-    let failureNotice = `*(The Dungeon Master using model ${selectedModel} was momentarily delayed: "${lastErrorMsg || 'Service busy'}". Click **Retry DM** below to try again.)*`;
-    if (authFailed) {
-      failureNotice = `⚠️ **Authentication Error**: The API key provided is invalid or missing. Please click **Settings** above to enter your key from [Google AI Studio](https://aistudio.google.com/app/apikey).`;
-    } else if (isNetworkError) {
-      failureNotice = `🌐 **Network Error**: Unable to reach Google API (\`generativelanguage.googleapis.com\`). Check your network or browser extensions.`;
-    }
+        if (db && auth && currentUser && firestoreMod) {
+          try {
+            const userId = currentUser.uid;
+            const savesRef = firestoreMod.collection(db, 'artifacts', appId, 'users', userId, 'adventure_saves');
+            const querySnapshot = await firestoreMod.getDocs(savesRef);
+            querySnapshot.forEach((docSnap) => {
+              cloudSaves.push({ id: docSnap.id, isCloud: true, ...docSnap.data() });
+            });
+          } catch (err) {
+            console.error("Error fetching cloud saves:", err);
+          }
+        }
 
-    setMessages(prev => [...currentMessages, { 
-      role: 'model', 
-      text: failureNotice, 
-      hidden: false, 
-      isError: true
-    }]);
-    setLoading(false);
-  };
+        const combined = [...cloudSaves, ...localSaves.map(s => ({ ...s, isCloud: false }))];
+        combined.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        setSavedSlots(combined);
+        setIsLoadingSaves(false);
+      };
 
-  const applyCharacterUpdates = (updates) => {
-    setImportedCharacter(prev => {
-      if (!prev) return prev;
+      const handleCloudSave = async () => {
+        if (!importedCharacter) return;
+        const nameToUse = saveNameInput.trim() || `${importedCharacter.name} - Level ${importedCharacter.level} (${new Date().toLocaleDateString()})`;
 
-      let newHp = prev.hp;
-      if (updates.hpChange) {
-        newHp = Math.min(prev.maxHp, Math.max(0, prev.hp + updates.hpChange));
-      }
+        setIsSaving(true);
+        const saveId = `save_${Date.now()}`;
+        const saveData = {
+          id: saveId,
+          saveName: nameToUse,
+          updatedAt: new Date().toISOString(),
+          character: importedCharacter,
+          messages: messages,
+        };
 
-      let newInventory = [...prev.inventory];
-      let changesLog = [];
+        const existingLocal = getLocalSaves();
+        const updatedLocal = [saveData, ...existingLocal.filter(s => s.id !== saveId)];
+        localStorage.setItem('aura_vtt_local_saves', JSON.stringify(updatedLocal));
 
-      if (updates.hpChange) {
-        changesLog.push(`HP ${updates.hpChange > 0 ? '+' : ''}${updates.hpChange}`);
-      }
+        const { db, auth, firestoreMod } = fbRef.current;
+        if (db && auth && auth.currentUser && firestoreMod) {
+          try {
+            const userId = auth.currentUser.uid;
+            const saveDocRef = firestoreMod.doc(db, 'artifacts', appId, 'users', userId, 'adventure_saves', saveId);
+            await firestoreMod.setDoc(saveDocRef, saveData);
+            showNotificationBanner(`💾 Cloud & Local save successful: "${nameToUse}"!`);
+          } catch (err) {
+            showNotificationBanner(`💾 Local save stored (Cloud error: ${err.message})`);
+          }
+        } else {
+          showNotificationBanner(`💾 Adventure saved locally: "${nameToUse}"!`);
+        }
 
-      if (updates.addInventory && Array.isArray(updates.addInventory)) {
-        updates.addInventory.forEach(newItem => {
-          newInventory.push(typeof newItem === 'string' ? { name: newItem, qty: 1, desc: '' } : newItem);
+        setSaveNameInput('');
+        setIsSaving(false);
+        loadCloudAndLocalSaves(db, auth, user, firestoreMod);
+      };
+
+      const loadSaveSlot = (save) => {
+        if (!save || !save.character) return;
+        setImportedCharacter(save.character);
+        setMessages(save.messages || []);
+        setGameState('playing');
+        setSaveModalOpen(false);
+        showNotificationBanner(`📖 Loaded adventure: "${save.saveName}"`);
+      };
+
+      const deleteSaveSlot = async (saveId, isCloud) => {
+        const existingLocal = getLocalSaves();
+        const filteredLocal = existingLocal.filter(s => s.id !== saveId);
+        localStorage.setItem('aura_vtt_local_saves', JSON.stringify(filteredLocal));
+
+        const { db, auth, firestoreMod } = fbRef.current;
+        if (isCloud && db && auth && auth.currentUser && firestoreMod) {
+          try {
+            const userId = auth.currentUser.uid;
+            const saveDocRef = firestoreMod.doc(db, 'artifacts', appId, 'users', userId, 'adventure_saves', saveId);
+            await firestoreMod.deleteDoc(saveDocRef);
+          } catch (err) {
+            console.error("Cloud delete error:", err);
+          }
+        }
+
+        showNotificationBanner("🗑 Save slot deleted");
+        loadCloudAndLocalSaves(db, auth, user, firestoreMod);
+      };
+
+      const downloadSaveFile = (customTitle) => {
+        const saveData = {
+          version: 1,
+          saveName: customTitle || `${importedCharacter?.name || 'Adventure'} Save`,
+          savedAt: new Date().toISOString(),
+          character: importedCharacter,
+          messages: messages
+        };
+        const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${(importedCharacter?.name || 'adventure').toLowerCase().replace(/\s+/g, '_')}_save.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showNotificationBanner("📥 Save file downloaded!");
+      };
+
+      const handleImportSaveFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const parsed = JSON.parse(event.target.result);
+            if (parsed.character && parsed.messages) {
+              setImportedCharacter(parsed.character);
+              setMessages(parsed.messages);
+              setGameState('playing');
+              setSaveModalOpen(false);
+              showNotificationBanner("📖 Adventure restored from save file!");
+            } else {
+              showNotificationBanner("⚠️ Invalid save file format.");
+            }
+          } catch (err) {
+            showNotificationBanner("⚠️ Failed to parse save file.");
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      const saveSettings = () => {
+        const trimmedKey = tempKey.trim();
+        setApiKey(trimmedKey);
+        localStorage.setItem('gemini_api_key', trimmedKey);
+
+        setSelectedModel(tempModel);
+        localStorage.setItem('gemini_model', tempModel);
+
+        setShowKeyModal(false);
+        showNotificationBanner(`⚙ Settings updated! Active Model: ${tempModel}`);
+      };
+
+      const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      };
+
+      useEffect(() => {
+        scrollToBottom();
+      }, [messages, loading]);
+
+      const parseAndSetCharacter = (rawData) => {
+        setImportError(null);
+        try {
+          const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+
+          if (!data.name) {
+            throw new Error("Missing 'name' field in character JSON.");
+          }
+
+          const base = data.baseStats || { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 };
+          const racial = data.racialBonuses || { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 };
+          const asi = data.asiBonuses || { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 };
+
+          const computedStats = {
+            STR: (base.STR || 10) + (racial.STR || 0) + (asi.STR || 0),
+            DEX: (base.DEX || 10) + (racial.DEX || 0) + (asi.DEX || 0),
+            CON: (base.CON || 10) + (racial.CON || 0) + (asi.CON || 0),
+            INT: (base.INT || 10) + (racial.INT || 0) + (asi.INT || 0),
+            WIS: (base.WIS || 10) + (racial.WIS || 0) + (asi.WIS || 0),
+            CHA: (base.CHA || 10) + (racial.CHA || 0) + (asi.CHA || 0),
+          };
+
+          const maxHp = data.maxHp || 10;
+          const parsed = {
+            name: data.name,
+            level: data.level || 1,
+            race: data.race?.name || (typeof data.race === 'string' ? data.race : 'Human'),
+            class: data.charClass?.name || data.class || 'Adventurer',
+            subclass: data.subclass?.name || (typeof data.subclass === 'string' ? data.subclass : ''),
+            background: data.background || { name: 'Custom', desc: '' },
+            hp: maxHp,
+            maxHp: maxHp,
+            armorClass: data.armorClass || (10 + getModifier(computedStats.DEX)),
+            stats: computedStats,
+            baseStats: base,
+            racialBonuses: racial,
+            asiBonuses: asi,
+            spells: data.spells || [],
+            features: data.features || [],
+            equipment: data.equipment || {},
+            inventory: data.inventory || [],
+            gold: data.gold || { gp: 0, sp: 0, cp: 0 }
+          };
+
+          setImportedCharacter(parsed);
+          setJsonInput(JSON.stringify(data, null, 2));
+          showNotificationBanner(`Loaded character: ${parsed.name}!`);
+        } catch (err) {
+          setImportError(`Invalid JSON: ${err.message}`);
+        }
+      };
+
+      const handleFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => parseAndSetCharacter(event.target.result);
+        reader.onerror = () => setImportError("Error reading the selected JSON file.");
+        reader.readAsText(file);
+      };
+
+      const handleDragOver = (e) => e.preventDefault();
+
+      const handleDrop = (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files?.[0];
+        if (file && file.type === "application/json") {
+          const reader = new FileReader();
+          reader.onload = (event) => parseAndSetCharacter(event.target.result);
+          reader.readAsText(file);
+        } else {
+          setImportError("Please drop a valid .json file.");
+        }
+      };
+
+      const loadPresetDrizzt = () => parseAndSetCharacter(SAMPLE_DRIZZT_JSON);
+
+      const showNotificationBanner = (msg) => {
+        setNotification(msg);
+        setTimeout(() => setNotification(null), 4000);
+      };
+
+      const startGame = async () => {
+        if (!importedCharacter) return;
+
+        const keyToUse = (apiKey || '').trim();
+        if (!keyToUse) {
+          setShowKeyModal(true);
+          showNotificationBanner("🔑 Please enter a valid Gemini API key to start.");
+          return;
+        }
+
+        setGameState('playing');
+        const initialHook = `The player character, ${importedCharacter.name}, a Level ${importedCharacter.level} ${importedCharacter.race} ${importedCharacter.class} (${importedCharacter.subclass || 'Standard'}), has just arrived at the starting location of the adventure. Describe where they are in a vivid, atmospheric D&D fantasy setting based on their background (${importedCharacter.background?.name || 'Noble'}) and present an immediate hook or person of interest. End by asking what they do.`;
+
+        await sendMessageToAI([{ role: 'user', text: initialHook, hidden: true }], keyToUse);
+      };
+
+      const rollDice = (sides) => {
+        const roll = Math.floor(Math.random() * sides) + 1;
+        const msgText = `🎲 Rolled a d${sides}: **${roll}**`;
+        handlePlayerMessage(msgText);
+      };
+
+      const handlePlayerMessage = async (text) => {
+        if (!text.trim() || loading) return;
+
+        const newUserMsg = { role: 'user', text, hidden: false };
+        const newMessages = [...messages, newUserMsg];
+        setMessages(newMessages);
+        setInput('');
+
+        await sendMessageToAI(newMessages);
+      };
+
+      const retryLastDMCall = async () => {
+        if (loading) return;
+        const cleaned = messages.filter(m => !m.isError);
+        if (cleaned.length > 0) {
+          await sendMessageToAI(cleaned);
+        } else if (importedCharacter) {
+          const initialHook = `The player character, ${importedCharacter.name}, a Level ${importedCharacter.level} ${importedCharacter.race} ${importedCharacter.class} (${importedCharacter.subclass || 'Standard'}), has just arrived at the starting location of the adventure. Describe where they are in a vivid, atmospheric D&D fantasy setting based on their background (${importedCharacter.background?.name || 'Noble'}) and present an immediate hook or person of interest. End by asking what they do.`;
+          await sendMessageToAI([{ role: 'user', text: initialHook, hidden: true }]);
+        }
+      };
+
+      const sendMessageToAI = async (currentMessages, overrideKey = null) => {
+        const keyToUse = (overrideKey || apiKey || '').trim();
+
+        if (!keyToUse) {
+          setShowKeyModal(true);
+          setMessages(prev => {
+            const filtered = prev.filter(m => !m.isError);
+            return [...filtered, { 
+              role: 'model', 
+              text: '⚠️ **Gemini API Key Required**\n\nPlease set your Gemini API key in **Settings** to connect with the Dungeon Master. You can get a free key from [Google AI Studio](https://aistudio.google.com/app/apikey).', 
+              hidden: false, 
+              isError: true
+            }];
+          });
+          setLoading(false);
+          return;
+        }
+
+        setLoading(true);
+
+        const candidateModels = [
+          selectedModel,
+          'gemini-3.8-flash',
+          'gemini-2.5-flash',
+          'gemini-2.0-flash',
+          'gemini-flash'
+        ].filter((m, idx, arr) => arr.indexOf(m) === idx);
+
+        let lastErrorMsg = null;
+        let authFailed = false;
+        let isNetworkError = false;
+
+        const contents = currentMessages
+          .filter(m => m.role === 'user' || m.role === 'model')
+          .map(m => ({
+            role: m.role,
+            parts: [{ text: m.text }]
+          }));
+
+        const payload = {
+          contents,
+          systemInstruction: { parts: [{ text: getSystemInstruction(importedCharacter) }] }
+        };
+
+        for (const modelName of candidateModels) {
+          try {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(keyToUse)}`;
+
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+              console.warn(`Model ${modelName} returned error:`, data.error.message);
+              lastErrorMsg = data.error.message;
+              const errStr = (data.error.message || '').toLowerCase();
+              if (
+                response.status === 400 || 
+                response.status === 401 || 
+                response.status === 403 || 
+                errStr.includes('api key') || 
+                errStr.includes('authentication') || 
+                errStr.includes('credential') || 
+                errStr.includes('unauthorized') ||
+                errStr.includes('oauth')
+              ) {
+                authFailed = true;
+              }
+              continue;
+            }
+
+            if (data.candidates && data.candidates.length > 0) {
+              const candidate = data.candidates[0];
+              if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+                let rawText = candidate.content.parts[0].text;
+
+                const updateRegex = /\[SHEET_UPDATE:\s*({.*?})\]/s;
+                const match = rawText.match(updateRegex);
+                let cleanText = rawText;
+
+                if (match) {
+                  cleanText = rawText.replace(updateRegex, '').trim();
+                  try {
+                    const updates = JSON.parse(match[1]);
+                    applyCharacterUpdates(updates);
+                  } catch (err) {
+                    console.error("Failed to parse sheet update JSON:", err);
+                  }
+                }
+
+                if (modelName !== selectedModel) {
+                  setSelectedModel(modelName);
+                  localStorage.setItem('gemini_model', modelName);
+                  showNotificationBanner(`ℹ️ Switched active model to ${modelName}`);
+                }
+
+                setMessages(prev => [...currentMessages, { role: 'model', text: cleanText, hidden: false }]);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (error) {
+            console.warn(`Fetch error with model ${modelName}:`, error);
+            lastErrorMsg = error.message;
+            if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('NetworkError')) {
+              isNetworkError = true;
+            }
+          }
+        }
+
+        if (authFailed) {
+          setShowKeyModal(true);
+          showNotificationBanner("🔑 Invalid API key. Please update your key in Settings.");
+        }
+
+        console.error("All candidate models failed:", lastErrorMsg);
+
+        let failureNotice = `*(The Dungeon Master using model ${selectedModel} was momentarily delayed: "${lastErrorMsg || 'Service busy'}". Click **Retry DM** below to try again.)*`;
+        if (authFailed) {
+          failureNotice = `⚠️ **Authentication Error**: The API key provided is invalid or missing. Please click **Settings** above to enter your key from [Google AI Studio](https://aistudio.google.com/app/apikey).`;
+        } else if (isNetworkError) {
+          failureNotice = `🌐 **Network Error**: Unable to reach Google API (\`generativelanguage.googleapis.com\`). Check your network or browser extensions.`;
+        }
+
+        setMessages(prev => [...currentMessages, { 
+          role: 'model', 
+          text: failureNotice, 
+          hidden: false, 
+          isError: true
+        }]);
+        setLoading(false);
+      };
+
+      const applyCharacterUpdates = (updates) => {
+        setImportedCharacter(prev => {
+          if (!prev) return prev;
+
+          let newHp = prev.hp;
+          if (updates.hpChange) {
+            newHp = Math.min(prev.maxHp, Math.max(0, prev.hp + updates.hpChange));
+          }
+
+          let newInventory = [...prev.inventory];
+          let changesLog = [];
+
+          if (updates.hpChange) {
+            changesLog.push(`HP ${updates.hpChange > 0 ? '+' : ''}${updates.hpChange}`);
+          }
+
+          if (updates.addInventory && Array.isArray(updates.addInventory)) {
+            updates.addInventory.forEach(newItem => {
+              newInventory.push(typeof newItem === 'string' ? { name: newItem, qty: 1, desc: '' } : newItem);
+            });
+            changesLog.push(`Received items`);
+          }
+
+          if (updates.removeInventory && Array.isArray(updates.removeInventory)) {
+            newInventory = newInventory.filter(item => !updates.removeInventory.includes(item.name));
+            changesLog.push(`Lost items`);
+          }
+
+          if (changesLog.length > 0) {
+            showNotificationBanner(`📜 Sheet Updated: ${changesLog.join(' | ')}`);
+          }
+
+          return {
+            ...prev,
+            hp: newHp,
+            inventory: newInventory
+          };
         });
-        changesLog.push(`Received items`);
-      }
-
-      if (updates.removeInventory && Array.isArray(updates.removeInventory)) {
-        newInventory = newInventory.filter(item => !updates.removeInventory.includes(item.name));
-        changesLog.push(`Lost items`);
-      }
-
-      if (changesLog.length > 0) {
-        showNotificationBanner(`📜 Sheet Updated: ${changesLog.join(' | ')}`);
-      }
-
-      return {
-        ...prev,
-        hp: newHp,
-        inventory: newInventory
       };
-    });
-  };
 
-  const updateHp = (amount) => {
-    setImportedCharacter(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        hp: Math.min(prev.maxHp, Math.max(0, prev.hp + amount))
+      const updateHp = (amount) => {
+        setImportedCharacter(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            hp: Math.min(prev.maxHp, Math.max(0, prev.hp + amount))
+          };
+        });
       };
-    });
-  };
 
-  const renderApiKeyModal = () => {
-    if (!showKeyModal) return null;
-    return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-4">
-          <div className="flex items-center gap-3 text-emerald-400">
-            <KeyIcon />
-            <h2 className="text-xl font-bold text-white">AI & API Settings</h2>
-          </div>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            Configure your Gemini API key and select your preferred AI model for the Dungeon Master.
-          </p>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Gemini Model</label>
-            <div className="relative">
-              <select
-                value={tempModel}
-                onChange={(e) => setTempModel(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-sm appearance-none font-sans"
-              >
-                <option value="gemini-3.8-flash">Gemini 3.8 Flash (Latest Default)</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                <option value="gemini-flash">Gemini Flash (Standard)</option>
-              </select>
-              <div className="absolute right-3 top-3 text-slate-400 pointer-events-none">▼</div>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Gemini API Key</label>
-            <input
-              type="password"
-              value={tempKey}
-              onChange={(e) => setTempKey(e.target.value)}
-              placeholder="AIzaSy..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono text-sm"
-            />
-          </div>
-
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-slate-400 space-y-1">
-            <p className="font-semibold text-emerald-400">Need an API key?</p>
-            <p>
-              Get a free key instantly from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-bold">Google AI Studio</a>.
-            </p>
-          </div>
-
-          <div className="flex gap-3 justify-end pt-2">
-            <button
-              onClick={() => setShowKeyModal(false)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium text-sm transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={saveSettings}
-              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm transition-colors"
-            >
-              Save Settings
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderSaveModal = () => {
-    if (!saveModalOpen) return null;
-    return (
-      <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div className="max-w-xl w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-5 max-h-[90vh] flex flex-col">
-          <div className="flex justify-between items-center text-emerald-400 border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <SaveIcon />
-              <h2 className="text-xl font-bold text-white">Save & Load Adventure</h2>
-            </div>
-            <button
-              onClick={() => setSaveModalOpen(false)}
-              className="text-slate-400 hover:text-white text-lg font-bold px-2 py-1"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Save Current Adventure Progress</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={saveNameInput}
-                onChange={(e) => setSaveNameInput(e.target.value)}
-                placeholder={`Save Title e.g., ${importedCharacter?.name || 'Hero'} - Goblin Lair`}
-                className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500 text-sm font-sans"
-              />
-              <button
-                onClick={handleCloudSave}
-                disabled={isSaving}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-1.5 transition-colors disabled:opacity-50 shrink-0"
-              >
-                <SaveIcon /> {isSaving ? 'Saving...' : 'Save Game'}
-              </button>
-            </div>
-            <div className="flex justify-between items-center pt-1 text-xs">
-              <span className="text-slate-500">Saves character sheet, HP, items, and story history.</span>
-              <button
-                onClick={() => downloadSaveFile()}
-                className="text-cyan-400 hover:underline flex items-center gap-1 font-semibold"
-              >
-                <DownloadIcon /> Export File (.json)
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Saved Adventures ({savedSlots.length})</h3>
-              <label className="text-xs text-emerald-400 hover:underline cursor-pointer font-bold flex items-center gap-1">
-                <FolderIcon /> Import Save File
-                <input type="file" accept=".json" onChange={handleImportSaveFile} className="hidden" />
-              </label>
-            </div>
-
-            {isLoadingSaves ? (
-              <div className="text-center py-6 text-slate-500 text-sm animate-pulse">Loading saved games...</div>
-            ) : savedSlots.length === 0 ? (
-              <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-slate-500 text-sm space-y-1">
-                <p className="font-semibold text-slate-400">No saved games found yet.</p>
-                <p className="text-xs">Create a save above to preserve your adventure progress anytime!</p>
+      const renderApiKeyModal = () => {
+        if (!showKeyModal) return null;
+        return (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="max-w-md w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-4">
+              <div className="flex items-center gap-3 text-emerald-400">
+                <KeyIcon />
+                <h2 className="text-xl font-bold text-white">AI & API Settings</h2>
               </div>
-            ) : (
-              savedSlots.map(slot => (
-                <div key={slot.id} className="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex justify-between items-center gap-3 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-white text-sm truncate">{slot.saveName}</h4>
-                      {slot.isCloud && (
-                        <span className="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded font-mono">
-                          Cloud
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {slot.character?.name} • Lv {slot.character?.level} {slot.character?.class} • {slot.messages?.length || 0} messages
-                    </p>
-                    <span className="text-[10px] text-slate-500 font-mono block mt-1">
-                      {slot.updatedAt ? new Date(slot.updatedAt).toLocaleString() : 'Saved recently'}
-                    </span>
-                  </div>
+              <p className="text-slate-300 text-sm leading-relaxed">
+                Configure your Gemini API key and select your preferred AI model for the Dungeon Master.
+              </p>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => loadSaveSlot(slot)}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
-                    >
-                      Load
-                    </button>
-                    <button
-                      onClick={() => deleteSaveSlot(slot.id, slot.isCloud)}
-                      className="bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 p-2 rounded-lg transition-colors"
-                      title="Delete save slot"
-                    >
-                      <TrashIcon />
-                    </button>
-                  </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Gemini Model</label>
+                <div className="relative">
+                  <select
+                    value={tempModel}
+                    onChange={(e) => setTempModel(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-sm appearance-none font-sans"
+                  >
+                    <option value="gemini-3.8-flash">Gemini 3.8 Flash (Latest Default)</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                    <option value="gemini-flash">Gemini Flash (Standard)</option>
+                  </select>
+                  <div className="absolute right-3 top-3 text-slate-400 pointer-events-none">▼</div>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+              </div>
 
-  if (gameState === 'import') {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 font-sans text-slate-200 relative">
-        {renderSaveModal()}
-        {renderApiKeyModal()}
-
-        <div className="max-w-3xl w-full bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
-          <div className="bg-slate-950 p-6 border-b border-slate-800 flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">Aura VTT</h1>
-              <p className="text-slate-400 text-xs font-medium">JSON Character File Import & AI DM ({selectedModel})</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowKeyModal(true)}
-                className="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-emerald-400 flex items-center gap-1.5 text-xs font-bold transition-colors"
-                title="Configure Settings"
-              >
-                <CpuIcon /> Settings
-              </button>
-              {savedSlots.length > 0 && (
-                <button
-                  onClick={() => setSaveModalOpen(true)}
-                  className="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-cyan-400 flex items-center gap-2 text-xs font-bold transition-colors"
-                >
-                  <FolderIcon /> Load Saved ({savedSlots.length})
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="p-6 md:p-8 space-y-6">
-            <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Import Full Character Sheet (.json)</label>
-
-              <div
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-slate-950/60 rounded-xl p-6 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-3 group"
-              >
-                <div className="p-3 bg-slate-800 group-hover:bg-emerald-600/20 text-emerald-400 rounded-full transition-colors">
-                  <UploadCloudIcon />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Click to browse or drop your character JSON file here</p>
-                  <p className="text-xs text-slate-500 mt-1">Accepts .json files containing character attributes, spells, and background</p>
-                </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Gemini API Key</label>
                 <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept=".json"
-                  onChange={handleFileUpload}
-                  className="hidden"
+                  type="password"
+                  value={tempKey}
+                  onChange={(e) => setTempKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono text-sm"
                 />
               </div>
 
-              <div className="flex items-center my-4">
-                <div className="flex-1 border-t border-slate-800"></div>
-                <span className="px-3 text-xs text-slate-500 font-bold uppercase">or paste JSON / load sample</span>
-                <div className="flex-1 border-t border-slate-800"></div>
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-slate-400 space-y-1">
+                <p className="font-semibold text-emerald-400">Need an API key?</p>
+                <p>
+                  Get a free key instantly from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-bold">Google AI Studio</a>.
+                </p>
               </div>
 
-              <div className="flex gap-2 mb-3">
+              <div className="flex gap-3 justify-end pt-2">
                 <button
-                  type="button"
-                  onClick={loadPresetDrizzt}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                  onClick={() => setShowKeyModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium text-sm transition-colors"
                 >
-                  <FileJsonIcon /> Load "Drizzt O'Durrden" Preset
+                  Cancel
                 </button>
-                {savedSlots.length > 0 && (
+                <button
+                  onClick={saveSettings}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm transition-colors"
+                >
+                  Save Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const renderSaveModal = () => {
+        if (!saveModalOpen) return null;
+        return (
+          <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="max-w-xl w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-5 max-h-[90vh] flex flex-col">
+              <div className="flex justify-between items-center text-emerald-400 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <SaveIcon />
+                  <h2 className="text-xl font-bold text-white">Save & Load Adventure</h2>
+                </div>
+                <button
+                  onClick={() => setSaveModalOpen(false)}
+                  className="text-slate-400 hover:text-white text-lg font-bold px-2 py-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Save Current Adventure Progress</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={saveNameInput}
+                    onChange={(e) => setSaveNameInput(e.target.value)}
+                    placeholder={`Save Title e.g., ${importedCharacter?.name || 'Hero'} - Goblin Lair`}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500 text-sm font-sans"
+                  />
                   <button
-                    type="button"
-                    onClick={() => setSaveModalOpen(true)}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                    onClick={handleCloudSave}
+                    disabled={isSaving}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-1.5 transition-colors disabled:opacity-50 shrink-0"
                   >
-                    <FolderIcon /> Load Saved Adventure
+                    <SaveIcon /> {isSaving ? 'Saving...' : 'Save Game'}
                   </button>
+                </div>
+                <div className="flex justify-between items-center pt-1 text-xs">
+                  <span className="text-slate-500">Saves character sheet, HP, items, and story history.</span>
+                  <button
+                    onClick={() => downloadSaveFile()}
+                    className="text-cyan-400 hover:underline flex items-center gap-1 font-semibold"
+                  >
+                    <DownloadIcon /> Export File (.json)
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Saved Adventures ({savedSlots.length})</h3>
+                  <label className="text-xs text-emerald-400 hover:underline cursor-pointer font-bold flex items-center gap-1">
+                    <FolderIcon /> Import Save File
+                    <input type="file" accept=".json" onChange={handleImportSaveFile} className="hidden" />
+                  </label>
+                </div>
+
+                {isLoadingSaves ? (
+                  <div className="text-center py-6 text-slate-500 text-sm animate-pulse">Loading saved games...</div>
+                ) : savedSlots.length === 0 ? (
+                  <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-slate-500 text-sm space-y-1">
+                    <p className="font-semibold text-slate-400">No saved games found yet.</p>
+                    <p className="text-xs">Create a save above to preserve your adventure progress anytime!</p>
+                  </div>
+                ) : (
+                  savedSlots.map(slot => (
+                    <div key={slot.id} className="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex justify-between items-center gap-3 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-white text-sm truncate">{slot.saveName}</h4>
+                          {slot.isCloud && (
+                            <span className="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800/60 px-1.5 py-0.5 rounded font-mono">
+                              Cloud
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {slot.character?.name} • Lv {slot.character?.level} {slot.character?.class} • {slot.messages?.length || 0} messages
+                        </p>
+                        <span className="text-[10px] text-slate-500 font-mono block mt-1">
+                          {slot.updatedAt ? new Date(slot.updatedAt).toLocaleString() : 'Saved recently'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => loadSaveSlot(slot)}
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+                        >
+                          Load
+                        </button>
+                        <button
+                          onClick={() => deleteSaveSlot(slot.id, slot.isCloud)}
+                          className="bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 p-2 rounded-lg transition-colors"
+                          title="Delete save slot"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
+            </div>
+          </div>
+        );
+      };
 
-              <textarea
-                rows="6"
-                value={jsonInput}
-                onChange={(e) => {
-                  setJsonInput(e.target.value);
-                  if (e.target.value.trim()) parseAndSetCharacter(e.target.value);
-                }}
-                placeholder="Paste character JSON here..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 font-mono text-xs leading-relaxed"
-              />
+      if (gameState === 'import') {
+        return (
+          <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 font-sans text-slate-200 relative">
+            {renderSaveModal()}
+            {renderApiKeyModal()}
 
-              {importError && (
-                <div className="mt-2 bg-red-900/40 border border-red-500/50 text-red-300 p-3 rounded-lg text-xs">
-                  {importError}
+            <div className="max-w-3xl w-full bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
+              <div className="bg-slate-950 p-6 border-b border-slate-800 flex justify-between items-center">
+                <div>
+                  <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">Aura VTT</h1>
+                  <p className="text-slate-400 text-xs font-medium">JSON Character File Import & AI DM ({selectedModel})</p>
                 </div>
-              )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowKeyModal(true)}
+                    className="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-emerald-400 flex items-center gap-1.5 text-xs font-bold transition-colors"
+                    title="Configure Settings"
+                  >
+                    <CpuIcon /> Settings
+                  </button>
+                  {savedSlots.length > 0 && (
+                    <button
+                      onClick={() => setSaveModalOpen(true)}
+                      className="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-cyan-400 flex items-center gap-2 text-xs font-bold transition-colors"
+                    >
+                      <FolderIcon /> Load Saved ({savedSlots.length})
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6 md:p-8 space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Import Full Character Sheet (.json)</label>
+
+                  <div
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-slate-950/60 rounded-xl p-6 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-3 group"
+                  >
+                    <div className="p-3 bg-slate-800 group-hover:bg-emerald-600/20 text-emerald-400 rounded-full transition-colors">
+                      <UploadCloudIcon />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">Click to browse or drop your character JSON file here</p>
+                      <p className="text-xs text-slate-500 mt-1">Accepts .json files containing character attributes, spells, and background</p>
+                    </div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept=".json"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <div className="flex items-center my-4">
+                    <div className="flex-1 border-t border-slate-800"></div>
+                    <span className="px-3 text-xs text-slate-500 font-bold uppercase">or paste JSON / load sample</span>
+                    <div className="flex-1 border-t border-slate-800"></div>
+                  </div>
+
+                  <div className="flex gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={loadPresetDrizzt}
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                    >
+                      <FileJsonIcon /> Load "Drizzt O'Durrden" Preset
+                    </button>
+                    {savedSlots.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSaveModalOpen(true)}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                      >
+                        <FolderIcon /> Load Saved Adventure
+                      </button>
+                    )}
+                  </div>
+
+                  <textarea
+                    rows="6"
+                    value={jsonInput}
+                    onChange={(e) => {
+                      setJsonInput(e.target.value);
+                      if (e.target.value.trim()) parseAndSetCharacter(e.target.value);
+                    }}
+                    placeholder="Paste character JSON here..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 font-mono text-xs leading-relaxed"
+                  />
+
+                  {importError && (
+                    <div className="mt-2 bg-red-900/40 border border-red-500/50 text-red-300 p-3 rounded-lg text-xs">
+                      {importError}
+                    </div>
+                  )}
+                </div>
+
+                {importedCharacter && (
+                  <div className="bg-slate-950 p-5 rounded-xl border border-emerald-500/30 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider">Ready to Play</span>
+                        <h2 className="text-2xl font-bold text-white">{importedCharacter.name}</h2>
+                        <p className="text-slate-400 text-xs">
+                          Level {importedCharacter.level} • {importedCharacter.race} {importedCharacter.class} {importedCharacter.subclass ? `(${importedCharacter.subclass})` : ''} • {importedCharacter.background?.name || 'Noble'}
+                        </p>
+                      </div>
+                      <div className="flex gap-3 text-center text-xs">
+                        <div className="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+                          <span className="text-slate-500 block text-[10px]">HP</span>
+                          <span className="font-bold text-red-400">{importedCharacter.maxHp}</span>
+                        </div>
+                        <div className="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+                          <span className="text-slate-500 block text-[10px]">AC</span>
+                          <span className="font-bold text-cyan-400">{importedCharacter.armorClass}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-6 gap-2 text-center">
+                      {Object.entries(importedCharacter.stats).map(([stat, val]) => (
+                        <div key={stat} className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                          <span className="text-slate-500 text-[10px] font-bold block">{stat}</span>
+                          <span className="font-bold text-white text-sm">{val}</span>
+                          <span className="text-[10px] font-bold text-emerald-400 block">{formatModifier(getModifier(val))}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="text-xs text-slate-400 flex flex-wrap gap-4 border-t border-slate-900 pt-3">
+                      <span>✨ <strong>Spells:</strong> {importedCharacter.spells.length}</span>
+                      <span>🛡️ <strong>Features:</strong> {importedCharacter.features.length}</span>
+                      <span>🎒 <strong>Items:</strong> {importedCharacter.inventory.length}</span>
+                      <span>🪙 <strong>Gold:</strong> {importedCharacter.gold.gp || 0} gp</span>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={startGame}
+                  disabled={!importedCharacter}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Begin D&D Session with {selectedModel}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col md:flex-row h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden relative">
+          {renderSaveModal()}
+          {renderApiKeyModal()}
+
+          {notification && (
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-bounce">
+              {notification}
+            </div>
+          )}
+
+          {/* Mobile Top Navigation */}
+          <div className="md:hidden flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800 shrink-0">
+            <h1 className="font-bold text-emerald-400">Aura VTT ({selectedModel.replace('gemini-', '')})</h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSaveModalOpen(true)}
+                className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white text-xs font-bold flex items-center gap-1"
+              >
+                <SaveIcon /> Save
+              </button>
+              <button onClick={() => setGameState('import')} className="p-2 bg-slate-800 rounded text-white text-xs font-bold">
+                Switch
+              </button>
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-slate-800 rounded text-white">
+                <MenuIcon />
+              </button>
+            </div>
+          </div>
+
+          {isSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/60 z-20 md:hidden backdrop-blur-sm"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
+
+          {/* Full Character Sheet Sidebar */}
+          <div className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 z-30 transition-transform duration-300 ease-in-out w-80 md:w-96 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 overflow-hidden`}>
+            <div className="p-5 border-b border-slate-800 bg-slate-950 flex justify-between items-start">
+              <div>
+                <h2 className="text-xl font-bold text-white">{importedCharacter.name}</h2>
+                <p className="text-emerald-400 text-xs font-medium">Level {importedCharacter.level} • {importedCharacter.race} {importedCharacter.class}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSaveModalOpen(true)}
+                  className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg transition-colors font-bold flex items-center gap-1"
+                >
+                  <SaveIcon /> Save
+                </button>
+                <button
+                  onClick={() => setGameState('import')}
+                  className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
+                >
+                  Switch
+                </button>
+              </div>
             </div>
 
-            {importedCharacter && (
-              <div className="bg-slate-950 p-5 rounded-xl border border-emerald-500/30 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider">Ready to Play</span>
-                    <h2 className="text-2xl font-bold text-white">{importedCharacter.name}</h2>
-                    <p className="text-slate-400 text-xs">
-                      Level {importedCharacter.level} • {importedCharacter.race} {importedCharacter.class} {importedCharacter.subclass ? `(${importedCharacter.subclass})` : ''} • {importedCharacter.background?.name || 'Noble'}
-                    </p>
+            <div className="flex border-b border-slate-800 bg-slate-950 text-xs font-bold text-slate-400 overflow-x-auto">
+              {[
+                { id: 'stats', label: 'Stats' },
+                { id: 'spells', label: `Spells (${importedCharacter.spells.length})` },
+                { id: 'features', label: `Features (${importedCharacter.features.length})` },
+                { id: 'inventory', label: `Items (${importedCharacter.inventory.length})` },
+                { id: 'background', label: 'Background' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSidebarTab(tab.id)}
+                  className={`px-3 py-2.5 whitespace-nowrap transition-colors border-b-2 ${activeSidebarTab === tab.id ? 'border-emerald-500 text-emerald-400 bg-slate-900' : 'border-transparent hover:text-slate-200'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 flex flex-col justify-between">
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-300 mb-1">
+                    <span className="flex items-center gap-1"><HeartIcon /> HP</span>
+                    <span className="font-mono text-emerald-400">{importedCharacter.hp} / {importedCharacter.maxHp}</span>
                   </div>
-                  <div className="flex gap-3 text-center text-xs">
-                    <div className="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-                      <span className="text-slate-500 block text-[10px]">HP</span>
-                      <span className="font-bold text-red-400">{importedCharacter.maxHp}</span>
-                    </div>
-                    <div className="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-                      <span className="text-slate-500 block text-[10px]">AC</span>
-                      <span className="font-bold text-cyan-400">{importedCharacter.armorClass}</span>
-                    </div>
+                  <div className="flex gap-1 mt-2">
+                    <button onClick={() => updateHp(-1)} className="flex-1 bg-red-900/40 hover:bg-red-900/60 text-red-400 py-1 rounded text-xs font-bold">-1</button>
+                    <button onClick={() => updateHp(1)} className="flex-1 bg-emerald-900/40 hover:bg-emerald-900/60 text-emerald-400 py-1 rounded text-xs font-bold">+1</button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-6 gap-2 text-center">
-                  {Object.entries(importedCharacter.stats).map(([stat, val]) => (
-                    <div key={stat} className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                      <span className="text-slate-500 text-[10px] font-bold block">{stat}</span>
-                      <span className="font-bold text-white text-sm">{val}</span>
-                      <span className="text-[10px] font-bold text-emerald-400 block">{formatModifier(getModifier(val))}</span>
+                <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 flex flex-col justify-center items-center">
+                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><ShieldIcon /> AC</span>
+                  <span className="text-2xl font-black text-cyan-400">{importedCharacter.armorClass}</span>
+                </div>
+              </div>
+
+              {activeSidebarTab === 'stats' && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ability Scores</h3>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {Object.entries(importedCharacter.stats).map(([stat, score]) => {
+                      const mod = getModifier(score);
+                      return (
+                        <div key={stat} className="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 text-center flex flex-col items-center">
+                          <span className="text-slate-400 text-xs font-bold uppercase">{stat}</span>
+                          <span className="text-2xl font-black text-white my-0.5">{score}</span>
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+                            {formatModifier(mod)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="bg-slate-800/40 border border-slate-800 p-3 rounded-xl space-y-1 text-xs">
+                    <span className="text-slate-400 font-bold block mb-1">Stat Breakdown:</span>
+                    {Object.keys(importedCharacter.stats).map(s => (
+                      <div key={s} className="flex justify-between text-slate-400">
+                        <span>{s}:</span>
+                        <span className="font-mono text-slate-300">
+                          Base {importedCharacter.baseStats[s] || 10} + Racial {importedCharacter.racialBonuses[s] || 0} + ASI {importedCharacter.asiBonuses[s] || 0} = {importedCharacter.stats[s]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeSidebarTab === 'spells' && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Prepared Spells</h3>
+                  {importedCharacter.spells.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic">No spells found on character sheet.</p>
+                  ) : (
+                    importedCharacter.spells.map((spell, idx) => (
+                      <div key={idx} className="bg-slate-800 rounded-xl p-3 border border-slate-700/80 space-y-1.5">
+                        <div className="flex justify-between items-start">
+                          <span className="font-bold text-cyan-400 text-sm">{spell.name}</span>
+                          <span className="text-[10px] font-bold bg-slate-900 text-slate-400 px-2 py-0.5 rounded">
+                            Level {spell.level || 0}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 flex flex-wrap gap-2">
+                          <span>⏱️ {spell.casting_time || '1 action'}</span>
+                          <span>📏 {spell.range || 'Self'}</span>
+                          <span>⏳ {spell.duration || 'Instant'}</span>
+                        </div>
+                        {spell.desc && (
+                          <p className="text-xs text-slate-300 leading-relaxed pt-1 border-t border-slate-700/50">
+                            {Array.isArray(spell.desc) ? spell.desc.join(' ') : spell.desc}
+                          </p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {activeSidebarTab === 'features' && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Features & Traits</h3>
+                  {importedCharacter.features.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic">No special features listed.</p>
+                  ) : (
+                    importedCharacter.features.map((feat, idx) => (
+                      <div key={idx} className="bg-slate-800 rounded-xl p-3 border border-slate-700/80 space-y-1">
+                        <span className="font-bold text-emerald-400 text-sm block">{feat.name}</span>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          {Array.isArray(feat.desc) ? feat.desc.join(' ') : feat.desc}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {activeSidebarTab === 'inventory' && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Equipment & Gold</h3>
+                    <span className="text-xs text-amber-400 font-mono font-bold">
+                      💰 {importedCharacter.gold.gp || 0} gp | {importedCharacter.gold.sp || 0} sp
+                    </span>
+                  </div>
+                  {importedCharacter.inventory.map((item, idx) => (
+                    <div key={idx} className="bg-slate-800 rounded-xl p-3 border border-slate-700/80 flex justify-between items-start">
+                      <div>
+                        <span className="font-semibold text-white text-sm">{item.name}</span>
+                        {item.desc && <p className="text-xs text-slate-400 mt-0.5">{item.desc}</p>}
+                      </div>
+                      <span className="text-xs font-mono text-emerald-400 bg-slate-900 px-2 py-0.5 rounded font-bold">
+                        x{item.qty || 1}
+                      </span>
                     </div>
                   ))}
                 </div>
+              )}
 
-                <div className="text-xs text-slate-400 flex flex-wrap gap-4 border-t border-slate-900 pt-3">
-                  <span>✨ <strong>Spells:</strong> {importedCharacter.spells.length}</span>
-                  <span>🛡️ <strong>Features:</strong> {importedCharacter.features.length}</span>
-                  <span>🎒 <strong>Items:</strong> {importedCharacter.inventory.length}</span>
-                  <span>🪙 <strong>Gold:</strong> {importedCharacter.gold.gp || 0} gp</span>
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={startGame}
-              disabled={!importedCharacter}
-              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Begin D&D Session with {selectedModel}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col md:flex-row h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden relative">
-      {renderSaveModal()}
-      {renderApiKeyModal()}
-
-      {notification && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-bounce">
-          {notification}
-        </div>
-      )}
-
-      {/* Mobile Top Navigation */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800 shrink-0">
-        <h1 className="font-bold text-emerald-400">Aura VTT ({selectedModel.replace('gemini-', '')})</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSaveModalOpen(true)}
-            className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white text-xs font-bold flex items-center gap-1"
-          >
-            <SaveIcon /> Save
-          </button>
-          <button onClick={() => setGameState('import')} className="p-2 bg-slate-800 rounded text-white text-xs font-bold">
-            Switch
-          </button>
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-slate-800 rounded text-white">
-            <MenuIcon />
-          </button>
-        </div>
-      </div>
-
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-20 md:hidden backdrop-blur-sm"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Full Character Sheet Sidebar */}
-      <div className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 z-30 transition-transform duration-300 ease-in-out w-80 md:w-96 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 overflow-hidden`}>
-        <div className="p-5 border-b border-slate-800 bg-slate-950 flex justify-between items-start">
-          <div>
-            <h2 className="text-xl font-bold text-white">{importedCharacter.name}</h2>
-            <p className="text-emerald-400 text-xs font-medium">Level {importedCharacter.level} • {importedCharacter.race} {importedCharacter.class}</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSaveModalOpen(true)}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg transition-colors font-bold flex items-center gap-1"
-            >
-              <SaveIcon /> Save
-            </button>
-            <button
-              onClick={() => setGameState('import')}
-              className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
-            >
-              Switch
-            </button>
-          </div>
-        </div>
-
-        <div className="flex border-b border-slate-800 bg-slate-950 text-xs font-bold text-slate-400 overflow-x-auto">
-          {[
-            { id: 'stats', label: 'Stats' },
-            { id: 'spells', label: `Spells (${importedCharacter.spells.length})` },
-            { id: 'features', label: `Features (${importedCharacter.features.length})` },
-            { id: 'inventory', label: `Items (${importedCharacter.inventory.length})` },
-            { id: 'background', label: 'Background' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveSidebarTab(tab.id)}
-              className={`px-3 py-2.5 whitespace-nowrap transition-colors border-b-2 ${activeSidebarTab === tab.id ? 'border-emerald-500 text-emerald-400 bg-slate-900' : 'border-transparent hover:text-slate-200'}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 flex flex-col justify-between">
-              <div className="flex justify-between items-center text-xs font-bold text-slate-300 mb-1">
-                <span className="flex items-center gap-1"><HeartIcon /> HP</span>
-                <span className="font-mono text-emerald-400">{importedCharacter.hp} / {importedCharacter.maxHp}</span>
-              </div>
-              <div className="flex gap-1 mt-2">
-                <button onClick={() => updateHp(-1)} className="flex-1 bg-red-900/40 hover:bg-red-900/60 text-red-400 py-1 rounded text-xs font-bold">-1</button>
-                <button onClick={() => updateHp(1)} className="flex-1 bg-emerald-900/40 hover:bg-emerald-900/60 text-emerald-400 py-1 rounded text-xs font-bold">+1</button>
-              </div>
-            </div>
-
-            <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 flex flex-col justify-center items-center">
-              <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><ShieldIcon /> AC</span>
-              <span className="text-2xl font-black text-cyan-400">{importedCharacter.armorClass}</span>
-            </div>
-          </div>
-
-          {activeSidebarTab === 'stats' && (
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ability Scores</h3>
-              <div className="grid grid-cols-2 gap-2.5">
-                {Object.entries(importedCharacter.stats).map(([stat, score]) => {
-                  const mod = getModifier(score);
-                  return (
-                    <div key={stat} className="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 text-center flex flex-col items-center">
-                      <span className="text-slate-400 text-xs font-bold uppercase">{stat}</span>
-                      <span className="text-2xl font-black text-white my-0.5">{score}</span>
-                      <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
-                        {formatModifier(mod)}
-                      </span>
+              {activeSidebarTab === 'background' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Background & Lore</h3>
+                  <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 space-y-2">
+                    <div>
+                      <span className="text-slate-400 font-bold block">Background Title:</span>
+                      <span className="text-white text-sm font-semibold">{importedCharacter.background?.name || 'Custom'}</span>
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="bg-slate-800/40 border border-slate-800 p-3 rounded-xl space-y-1 text-xs">
-                <span className="text-slate-400 font-bold block mb-1">Stat Breakdown:</span>
-                {Object.keys(importedCharacter.stats).map(s => (
-                  <div key={s} className="flex justify-between text-slate-400">
-                    <span>{s}:</span>
-                    <span className="font-mono text-slate-300">
-                      Base {importedCharacter.baseStats[s] || 10} + Racial {importedCharacter.racialBonuses[s] || 0} + ASI {importedCharacter.asiBonuses[s] || 0} = {importedCharacter.stats[s]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeSidebarTab === 'spells' && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Prepared Spells</h3>
-              {importedCharacter.spells.length === 0 ? (
-                <p className="text-xs text-slate-500 italic">No spells found on character sheet.</p>
-              ) : (
-                importedCharacter.spells.map((spell, idx) => (
-                  <div key={idx} className="bg-slate-800 rounded-xl p-3 border border-slate-700/80 space-y-1.5">
-                    <div className="flex justify-between items-start">
-                      <span className="font-bold text-cyan-400 text-sm">{spell.name}</span>
-                      <span className="text-[10px] font-bold bg-slate-900 text-slate-400 px-2 py-0.5 rounded">
-                        Level {spell.level || 0}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-400 flex flex-wrap gap-2">
-                      <span>⏱️ {spell.casting_time || '1 action'}</span>
-                      <span>📏 {spell.range || 'Self'}</span>
-                      <span>⏳ {spell.duration || 'Instant'}</span>
-                    </div>
-                    {spell.desc && (
-                      <p className="text-xs text-slate-300 leading-relaxed pt-1 border-t border-slate-700/50">
-                        {Array.isArray(spell.desc) ? spell.desc.join(' ') : spell.desc}
-                      </p>
+                    {importedCharacter.background?.skills && (
+                      <div>
+                        <span className="text-slate-400 font-bold block">Skill Proficiencies:</span>
+                        <span className="text-emerald-400">{importedCharacter.background.skills}</span>
+                      </div>
+                    )}
+                    {importedCharacter.background?.desc && (
+                      <div>
+                        <span className="text-slate-400 font-bold block">Description:</span>
+                        <p className="text-slate-300 leading-relaxed mt-0.5">{importedCharacter.background.desc}</p>
+                      </div>
                     )}
                   </div>
-                ))
+                </div>
               )}
             </div>
-          )}
+          </div>
 
-          {activeSidebarTab === 'features' && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Features & Traits</h3>
-              {importedCharacter.features.length === 0 ? (
-                <p className="text-xs text-slate-500 italic">No special features listed.</p>
-              ) : (
-                importedCharacter.features.map((feat, idx) => (
-                  <div key={idx} className="bg-slate-800 rounded-xl p-3 border border-slate-700/80 space-y-1">
-                    <span className="font-bold text-emerald-400 text-sm block">{feat.name}</span>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      {Array.isArray(feat.desc) ? feat.desc.join(' ') : feat.desc}
-                    </p>
+          <div className="flex-1 flex flex-col min-w-0 bg-slate-950 relative">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth">
+              {messages.map((msg, idx) => {
+                if (msg.hidden) return null;
+                const isUser = msg.role === 'user';
+
+                return (
+                  <div key={idx} className={`flex gap-4 p-5 rounded-2xl ${isUser ? 'bg-indigo-900/20 ml-8 md:ml-16 border border-indigo-500/10' : 'bg-slate-900 mr-8 md:mr-16 border border-slate-800 shadow-sm'}`}>
+                    <div className="flex-shrink-0 mt-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isUser ? 'bg-indigo-500 text-white' : 'bg-emerald-600 text-white'}`}>
+                        {isUser ? <UserIcon /> : <BotIcon />}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-xs font-bold uppercase tracking-wider mb-2 ${isUser ? 'text-indigo-400' : 'text-emerald-500'}`}>
+                        {isUser ? importedCharacter.name : `Dungeon Master (${selectedModel})`}
+                      </div>
+                      <div className="text-slate-300 text-sm md:text-base leading-relaxed">
+                        {formatText(msg.text)}
+                      </div>
+                    </div>
                   </div>
-                ))
+                );
+              })}
+
+              {loading && (
+                <div className="flex gap-4 p-5 rounded-2xl bg-slate-900 mr-8 md:mr-16 border border-slate-800 opacity-70">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white">
+                      <BotIcon />
+                    </div>
+                  </div>
+                  <div className="flex-1 flex items-center">
+                    <span className="text-emerald-500 text-sm font-medium animate-pulse flex items-center gap-1">
+                      The Dungeon Master is generating with <strong className="text-white underline">{selectedModel}</strong> <span className="animate-bounce inline-block delay-75">.</span><span className="animate-bounce inline-block delay-150">.</span><span className="animate-bounce inline-block delay-300">.</span>
+                    </span>
+                  </div>
+                </div>
               )}
+
+              <div ref={messagesEndRef} className="h-4" />
             </div>
-          )}
 
-          {activeSidebarTab === 'inventory' && (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Equipment & Gold</h3>
-                <span className="text-xs text-amber-400 font-mono font-bold">
-                  💰 {importedCharacter.gold.gp || 0} gp | {importedCharacter.gold.sp || 0} sp
-                </span>
-              </div>
-              {importedCharacter.inventory.map((item, idx) => (
-                <div key={idx} className="bg-slate-800 rounded-xl p-3 border border-slate-700/80 flex justify-between items-start">
-                  <div>
-                    <span className="font-semibold text-white text-sm">{item.name}</span>
-                    {item.desc && <p className="text-xs text-slate-400 mt-0.5">{item.desc}</p>}
+            <div className="p-4 bg-slate-900 border-t border-slate-800 shrink-0">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                  <div className="flex flex-wrap gap-2">
+                    {[20, 12, 10, 8, 6, 4].map(sides => (
+                      <button
+                        key={sides}
+                        onClick={() => rollDice(sides)}
+                        disabled={loading}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                      >
+                        <span className="text-emerald-500">d</span>{sides}
+                      </button>
+                    ))}
                   </div>
-                  <span className="text-xs font-mono text-emerald-400 bg-slate-900 px-2 py-0.5 rounded font-bold">
-                    x{item.qty || 1}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
 
-          {activeSidebarTab === 'background' && (
-            <div className="space-y-3 text-xs">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Background & Lore</h3>
-              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 space-y-2">
-                <div>
-                  <span className="text-slate-400 font-bold block">Background Title:</span>
-                  <span className="text-white text-sm font-semibold">{importedCharacter.background?.name || 'Custom'}</span>
-                </div>
-                {importedCharacter.background?.skills && (
-                  <div>
-                    <span className="text-slate-400 font-bold block">Skill Proficiencies:</span>
-                    <span className="text-emerald-400">{importedCharacter.background.skills}</span>
-                  </div>
-                )}
-                {importedCharacter.background?.desc && (
-                  <div>
-                    <span className="text-slate-400 font-bold block">Description:</span>
-                    <p className="text-slate-300 leading-relaxed mt-0.5">{importedCharacter.background.desc}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-950 relative">
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth">
-          {messages.map((msg, idx) => {
-            if (msg.hidden) return null;
-            const isUser = msg.role === 'user';
-
-            return (
-              <div key={idx} className={`flex gap-4 p-5 rounded-2xl ${isUser ? 'bg-indigo-900/20 ml-8 md:ml-16 border border-indigo-500/10' : 'bg-slate-900 mr-8 md:mr-16 border border-slate-800 shadow-sm'}`}>
-                <div className="flex-shrink-0 mt-1">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isUser ? 'bg-indigo-500 text-white' : 'bg-emerald-600 text-white'}`}>
-                    {isUser ? <UserIcon /> : <BotIcon />}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { setTempModel(selectedModel); setTempKey(apiKey); setShowKeyModal(true); }}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow"
+                    >
+                      <CpuIcon /> Model: <span className="font-bold underline text-white">{selectedModel}</span>
+                    </button>
+                    <button
+                      onClick={() => setSaveModalOpen(true)}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                    >
+                      <SaveIcon /> Save Adventure
+                    </button>
                   </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className={`text-xs font-bold uppercase tracking-wider mb-2 ${isUser ? 'text-indigo-400' : 'text-emerald-500'}`}>
-                    {isUser ? importedCharacter.name : `Dungeon Master (${selectedModel})`}
-                  </div>
-                  <div className="text-slate-300 text-sm md:text-base leading-relaxed">
-                    {formatText(msg.text)}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
 
-          {loading && (
-            <div className="flex gap-4 p-5 rounded-2xl bg-slate-900 mr-8 md:mr-16 border border-slate-800 opacity-70">
-              <div className="flex-shrink-0 mt-1">
-                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white">
-                  <BotIcon />
-                </div>
-              </div>
-              <div className="flex-1 flex items-center">
-                <span className="text-emerald-500 text-sm font-medium animate-pulse flex items-center gap-1">
-                  The Dungeon Master is generating with <strong className="text-white underline">{selectedModel}</strong> <span className="animate-bounce inline-block delay-75">.</span><span className="animate-bounce inline-block delay-150">.</span><span className="animate-bounce inline-block delay-300">.</span>
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} className="h-4" />
-        </div>
-
-        <div className="p-4 bg-slate-900 border-t border-slate-800 shrink-0">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
-              <div className="flex flex-wrap gap-2">
-                {[20, 12, 10, 8, 6, 4].map(sides => (
-                  <button
-                    key={sides}
-                    onClick={() => rollDice(sides)}
+                <form
+                  onSubmit={(e) => { e.preventDefault(); handlePlayerMessage(input); }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
                     disabled={loading}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                    placeholder={`What do you do? (Using ${selectedModel})`}
+                    className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-slate-600 disabled:opacity-50 text-sm"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    onClick={retryLastDMCall}
+                    disabled={loading}
+                    title="Retry Dungeon Master Response"
+                    className="bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-3 rounded-lg border border-slate-700 text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
                   >
-                    <span className="text-emerald-500">d</span>{sides}
+                    🔄 Retry DM
                   </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setTempModel(selectedModel); setTempKey(apiKey); setShowKeyModal(true); }}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow"
-                >
-                  <CpuIcon /> Model: <span className="font-bold underline text-white">{selectedModel}</span>
-                </button>
-                <button
-                  onClick={() => setSaveModalOpen(true)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
-                >
-                  <SaveIcon /> Save Adventure
-                </button>
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || loading}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center min-w-[50px]"
+                  >
+                    <SendIcon />
+                  </button>
+                </form>
               </div>
             </div>
-
-            <form
-              onSubmit={(e) => { e.preventDefault(); handlePlayerMessage(input); }}
-              className="flex gap-2"
-            >
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={loading}
-                placeholder={`What do you do? (Using ${selectedModel})`}
-                className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-slate-600 disabled:opacity-50 text-sm"
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                onClick={retryLastDMCall}
-                disabled={loading}
-                title="Retry Dungeon Master Response"
-                className="bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-3 rounded-lg border border-slate-700 text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
-              >
-                🔄 Retry DM
-              </button>
-              <button
-                type="submit"
-                disabled={!input.persist && !input.trim() || loading}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center min-w-[50px]"
-              >
-                <SendIcon />
-              </button>
-            </form>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
